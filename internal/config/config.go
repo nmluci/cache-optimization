@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -14,7 +13,6 @@ type Config struct {
 	Environment Environment `json:"environment"`
 
 	MariaDBConfig MariaDBConfig `json:"mariaDBConfig"`
-	MongoDBConfig MongoDBConfig `json:"mongoDBConfig"`
 	RedisConfig   RedisConfig   `json:"redisConfig"`
 }
 
@@ -29,16 +27,10 @@ func Init() {
 		ServiceName: os.Getenv("SERVICE_NAME"),
 		ServicePort: os.Getenv("SERVICE_PORT"),
 		MariaDBConfig: MariaDBConfig{
-			Address:  fmt.Sprintf("%s:%s", os.Getenv("MARIADB_ADDRESS"), os.Getenv("MARIADB_PORT")),
+			Address:  os.Getenv("MARIADB_ADDRESS"),
 			Username: os.Getenv("MARIADB_USERNAME"),
 			Password: os.Getenv("MARIADB_PASSWORD"),
 			DBName:   os.Getenv("MARIADB_DBNAME"),
-		},
-		MongoDBConfig: MongoDBConfig{
-			Address:  fmt.Sprintf("%s:%s", os.Getenv("MONGODB_ADDRESS"), os.Getenv("MONGODB_PORT")),
-			Username: os.Getenv("MONGODB_USERNAME"),
-			Password: os.Getenv("MONGODB_PASSWORD"),
-			DBName:   os.Getenv("MONGODB_DBNAME"),
 		},
 		RedisConfig: RedisConfig{
 			Address:  os.Getenv("REDIS_ADDRESS"),

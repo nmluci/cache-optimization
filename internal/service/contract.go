@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/nmluci/go-backend/internal/repository"
-	"github.com/nmluci/go-backend/pkg/dto"
+	"github.com/nmluci/cache-optimization/internal/repository"
+	"github.com/nmluci/cache-optimization/pkg/dto"
 	"github.com/sirupsen/logrus"
 )
 

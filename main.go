@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/nmluci/go-backend/cmd/webservice"
-	"github.com/nmluci/go-backend/internal/component"
-	"github.com/nmluci/go-backend/internal/config"
+	"github.com/nmluci/cache-optimization/cmd/webservice"
+	"github.com/nmluci/cache-optimization/internal/component"
+	"github.com/nmluci/cache-optimization/internal/config"
 )
 
 func main() {

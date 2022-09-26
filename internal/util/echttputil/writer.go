@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/nmluci/go-backend/pkg/dto"
-	"github.com/nmluci/go-backend/pkg/errs"
+	"github.com/nmluci/cache-optimization/pkg/dto"
+	"github.com/nmluci/cache-optimization/pkg/errs"
 )
 
 func WriteSuccessResponse(ec echo.Context, data interface{}) error {

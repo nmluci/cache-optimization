@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/nmluci/go-backend/internal/config"
+	"github.com/nmluci/cache-optimization/internal/config"
 	"github.com/sirupsen/logrus"
 )
 

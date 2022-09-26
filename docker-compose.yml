@@ -1,11 +1,11 @@
 version: '3.3'
 services:
-  # backend:
-  #   container_name: go-bootstrapper
-  #   image: nmluci/go-bootstrapper:backend
-  #   build: .
-  #   ports:
-  #     - "7780:7780"
+  backend:
+    container_name: cache-optimization
+    image: nmluci/cache-optimization:backend
+    build: .
+    ports:
+      - "5000:1972"
   cache_redis:
     container_name: cache_redis
     image: redis:7.0.4
@@ -22,25 +22,13 @@ services:
     environment:
       - MARIADB_ROOT_USERNAME=root
       - MARIADB_ROOT_PASSWORD=root
-      - MARIADB_DATABASE=test_db
+      - MARIADB_DATABASE=stellar_db
     ports:
       - "3003:3306"
     restart: unless-stopped
     volumes:
       - mariadb_data:/data
-  db_mongo:
-    container_name: db_mongo
-    image: mongo:4.0.4
-    restart: unless-stopped
-    ports:
-      - "3002:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=root
-    volumes:
-      - mongo_data:/data
 volumes:
   cache_data: {}
-  mongo_data: {}
   mariadb_data: {}
     

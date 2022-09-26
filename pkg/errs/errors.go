@@ -4,18 +4,20 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nmluci/go-backend/pkg/constant"
-	"github.com/nmluci/go-backend/pkg/dto"
+	"github.com/nmluci/cache-optimization/pkg/constant"
+	"github.com/nmluci/cache-optimization/pkg/dto"
 )
 
 var (
-	ErrBadRequest = errors.New("bad request")
-	ErrUnknown    = errors.New("internal server error")
+	ErrBadRequest   = errors.New("bad request")
+	ErrUnknown      = errors.New("internal server error")
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 const (
-	ErrCodeUndefined  constant.ErrCode = 1
-	ErrCodeBadRequest constant.ErrCode = 2
+	ErrCodeUndefined    constant.ErrCode = 1
+	ErrCodeBadRequest   constant.ErrCode = 2
+	ErrCodeUnauthorized constant.ErrCode = 3
 )
 
 const (
@@ -26,8 +28,9 @@ const (
 )
 
 var errorMap = map[error]dto.ErrorResponse{
-	ErrUnknown:    ErrorResponse(ErrStatusUnknown, ErrCodeUndefined, ErrUnknown),
-	ErrBadRequest: ErrorResponse(ErrStatusClient, ErrCodeBadRequest, ErrBadRequest),
+	ErrUnknown:      ErrorResponse(ErrStatusUnknown, ErrCodeUndefined, ErrUnknown),
+	ErrBadRequest:   ErrorResponse(ErrStatusClient, ErrCodeBadRequest, ErrBadRequest),
+	ErrUnauthorized: ErrorResponse(ErrStatusNoAccess, ErrCodeUnauthorized, ErrUnauthorized),
 }
 
 func ErrorResponse(status int, code constant.ErrCode, err error) dto.ErrorResponse {

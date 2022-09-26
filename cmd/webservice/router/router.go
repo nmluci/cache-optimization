@@ -2,9 +2,9 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/nmluci/go-backend/cmd/webservice/handler"
-	"github.com/nmluci/go-backend/internal/config"
-	"github.com/nmluci/go-backend/internal/service"
+	"github.com/nmluci/cache-optimization/cmd/webservice/handler"
+	"github.com/nmluci/cache-optimization/internal/config"
+	"github.com/nmluci/cache-optimization/internal/service"
 	"github.com/sirupsen/logrus"
 )
 

@@ -2,11 +2,11 @@ package webservice
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/nmluci/go-backend/cmd/webservice/router"
-	"github.com/nmluci/go-backend/internal/component"
-	"github.com/nmluci/go-backend/internal/config"
-	"github.com/nmluci/go-backend/internal/repository"
-	"github.com/nmluci/go-backend/internal/service"
+	"github.com/nmluci/cache-optimization/cmd/webservice/router"
+	"github.com/nmluci/cache-optimization/internal/component"
+	"github.com/nmluci/cache-optimization/internal/config"
+	"github.com/nmluci/cache-optimization/internal/repository"
+	"github.com/nmluci/cache-optimization/internal/service"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,15 +15,6 @@ const logTagStartWebservice = "[Start]"
 func Start(conf *config.Config, logger *logrus.Entry) {
 	db, err := component.InitMariaDB(&component.InitMariaDBParams{
 		Conf:   &conf.MariaDBConfig,
-		Logger: logger,
-	})
-
-	if err != nil {
-		logger.Fatalf("%s initializing maria db: %+v", logTagStartWebservice, err)
-	}
-
-	mongo, err := component.InitMongoDB(&component.InitMongoDBParams{
-		Conf:   &conf.MongoDBConfig,
 		Logger: logger,
 	})
 
@@ -47,7 +38,6 @@ func Start(conf *config.Config, logger *logrus.Entry) {
 	repo := repository.NewRepository(&repository.NewRepositoryParams{
 		Logger:  logger,
 		MariaDB: db,
-		MongoDB: mongo,
 		Redis:   redis,
 	})
 

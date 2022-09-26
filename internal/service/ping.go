@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"github.com/nmluci/go-backend/pkg/dto"
+	"github.com/nmluci/cache-optimization/pkg/dto"
 )
 
 func (s *service) Ping() (pingResponse dto.PublicPingResponse) {

@@ -1,4 +1,4 @@
-FROM golang:1.17 as build
+FROM golang:1.19 as build
 WORKDIR /app
 
 COPY go.mod /app/
@@ -9,20 +9,22 @@ RUN go mod tidy
 
 COPY . /app/
 
-RUN go build -o /app/main
+RUN CGO_ENABLED=0 go build -o /app/main
 
 # Deploy
 
-FROM alpine:3.16.0
+FROM alpine:3.16.0 as webservice
 WORKDIR /app
 
 EXPOSE 5000
 
 RUN apk update
-RUN apk add --no--cache tzdata
-ENV cp /usr/share/zoneinfo/Asia/Makassar /etc/localtime
-RUN echo "Asia/Makassar" > /etc/timezone
+RUN apk add --no-cache tzdata
+
+ENV TZ=Asia/Makassar
+RUN cp /usr/share/zoneinfo/$TZ /etc/localtime
 
 COPY --from=build /app/main /app/main
+COPY --from=build /app/conf /app/conf
 
 CMD ["./main"]
