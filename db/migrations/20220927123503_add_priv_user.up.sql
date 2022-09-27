@@ -1,0 +1,1 @@
+alter table userdata add access_level int(3);

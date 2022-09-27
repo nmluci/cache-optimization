@@ -8,6 +8,5 @@ type ItemData struct {
 
 type OrderData struct {
 	UserdataID int64
-	Orderdata  int64
 	Items      []*ItemData
 }

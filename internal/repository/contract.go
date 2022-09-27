@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/nmluci/cache-optimization/internal/indto"
 	"github.com/nmluci/cache-optimization/internal/model"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -14,6 +15,7 @@ type Repository interface {
 	InvalidateUserSession(ctx context.Context, sessionKey string) (err error)
 	FindUserByID(ctx context.Context, id uint64) (res *model.Users, err error)
 	FindUserByEmail(ctx context.Context, email string) (res *model.Users, err error)
+	FindUserBySession(ctx context.Context, sessionKey string) (res *model.Users, err error)
 	InsertNewUser(ctx context.Context, data *model.Users) (err error)
 	UpdateUserByID(ctx context.Context, id uint64, data *model.Users) (err error)
 	DeleteUserByID(ctx context.Context, id uint64) (err error)
@@ -23,6 +25,16 @@ type Repository interface {
 	InsertNewProduct(ctx context.Context, data *model.Product) (err error)
 	UpdateProduct(ctx context.Context, id uint64, data *model.Product) (err error)
 	DeleteProductByID(ctx context.Context, id uint64) (err error)
+
+	CheckoutOrders(ctx context.Context, payload *indto.OrderData) (err error)
+
+	// NO CACHE
+	FindUserSessionByKey(ctx context.Context, key string) (res *model.Users, err error)
+	NewSession(ctx context.Context, data *model.Users) (sessionKey string, err error)
+	InvalidateSessionKey(ctx context.Context, sessionKey string) (err error)
+	ForceFindUserByID(ctx context.Context, id uint64) (res *model.Users, err error)
+	ForceFindProducts(ctx context.Context) (res []*model.Product, err error)
+	ForceFindProductByID(ctx context.Context, id uint64) (res *model.Product, err error)
 }
 
 type repository struct {

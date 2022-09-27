@@ -14,6 +14,8 @@ type Config struct {
 
 	MariaDBConfig MariaDBConfig `json:"mariaDBConfig"`
 	RedisConfig   RedisConfig   `json:"redisConfig"`
+
+	MasterKey string `json:"-"`
 }
 
 const logTagConfig = "[Init Config]"
@@ -37,6 +39,7 @@ func Init() {
 			Port:     os.Getenv("REDIS_PORT"),
 			Password: os.Getenv("REDIS_PASSWORD"),
 		},
+		MasterKey: os.Getenv("MASTER_KEY"),
 	}
 
 	if conf.ServiceName == "" {

@@ -39,7 +39,7 @@ func (repo *repository) FindProducts(ctx context.Context) (res []*model.Product,
 	var stmt string
 	var args []interface{}
 	if cacheKey != "" {
-		stmt, args, err = sqlSelectProduct.Where(squirrel.And{squirrel.Expr(fmt.Sprintf("id in %s", cacheKey))}).ToSql()
+		stmt, args, err = sqlSelectProduct.Where(squirrel.And{squirrel.Expr(fmt.Sprintf("id in %s", cacheKey)), squirrel.Eq{"deleted_at": nil}}).ToSql()
 	} else {
 		stmt, args, err = sqlSelectProduct.Where(squirrel.Eq{"deleted_at": nil}).ToSql()
 	}
@@ -116,6 +116,49 @@ func (repo *repository) FindProductByID(ctx context.Context, id uint64) (res *mo
 	if err != nil {
 		repo.logger.Errorf("%s failed to insert query result into cache: %+v", logTagProductFindByID, err)
 		return res, nil
+	}
+
+	return
+}
+
+func (repo *repository) ForceFindProducts(ctx context.Context) (res []*model.Product, err error) {
+	stmt, args, err := sqlSelectProduct.Where(squirrel.Eq{"deleted_at": nil}).ToSql()
+	if err != nil {
+		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagProductFindAll, err)
+		return
+	}
+
+	rows, err := repo.mariaDB.QueryContext(ctx, stmt, args...)
+	if err != nil {
+		repo.logger.Errorf("%s failed to parsed query results: %+v", logTagProductFindAll, err)
+		return
+	}
+
+	res = []*model.Product{}
+	for rows.Next() {
+		temp := &model.Product{}
+		err = rows.Scan(&temp.ID, &temp.Name, &temp.Category, &temp.Description, &temp.UnitPrice, &temp.Qty)
+		if err != nil {
+			repo.logger.Errorf("%s failed to map query result: %+v", logTagProductFindAll, err)
+		}
+
+		res = append(res, temp)
+	}
+
+	return
+}
+
+func (repo *repository) ForceFindProductByID(ctx context.Context, id uint64) (res *model.Product, err error) {
+	stmt, args, err := sqlSelectProduct.Where(squirrel.And{squirrel.Eq{"id": id}, squirrel.Eq{"deleted_at": nil}}).ToSql()
+	if err != nil {
+		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagProductFindByID, err)
+		return
+	}
+
+	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Name, &res.Category, &res.Description, &res.UnitPrice, &res.Qty)
+	if err != nil {
+		repo.logger.Errorf("%s failed to parsed query results: %+v", logTagProductFindByID, err)
+		return
 	}
 
 	return

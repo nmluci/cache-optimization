@@ -7,11 +7,13 @@ import (
 )
 
 var (
-	logTagNewProduct      = "[ProductService-New]"
-	logTagFindByIDProduct = "[ProductService-GetByID]"
-	logTagFindAllProduct  = "[ProductService-All]"
-	logTagEditProduct     = "[ProductService-Edit]"
-	logTagDeleteProduct   = "[ProductService-Delete]"
+	logTagNewProduct        = "[ProductService-New]"
+	logTagFindByIDProduct   = "[ProductService-GetByID]"
+	logTagFindByIDProductNC = "[NC-ProductService-GetByID]"
+	logTagFindAllProduct    = "[ProductService-All]"
+	logTagFindAllProductNC  = "[NC-ProductService-All]"
+	logTagEditProduct       = "[ProductService-Edit]"
+	logTagDeleteProduct     = "[ProductService-Delete]"
 )
 
 func (s *service) FindProductByID(ctx context.Context, id uint64) (res *model.Product, err error) {
@@ -38,6 +40,36 @@ func (s *service) FindProducts(ctx context.Context) (res []*model.Product, err e
 
 	if res == nil {
 		s.logger.Errorf("%s not found", logTagFindAllProduct)
+		return nil, nil
+	}
+
+	return res, nil
+}
+
+func (s *service) ForceFindProductByID(ctx context.Context, id uint64) (res *model.Product, err error) {
+	res, err = s.repository.ForceFindProductByID(ctx, id)
+	if err != nil {
+		s.logger.Errorf("%s failed to fetch product data: %+v", logTagFindByIDProductNC, err)
+		return
+	}
+
+	if res == nil {
+		s.logger.Errorf("%s productID: %d not found", logTagFindByIDProductNC, id)
+		return nil, nil
+	}
+
+	return res, nil
+}
+
+func (s *service) ForceFindProducts(ctx context.Context) (res []*model.Product, err error) {
+	res, err = s.repository.ForceFindProducts(ctx)
+	if err != nil {
+		s.logger.Errorf("%s failed to fetch product data: %+v", logTagFindAllProductNC, err)
+		return
+	}
+
+	if res == nil {
+		s.logger.Errorf("%s not found", logTagFindAllProductNC)
 		return nil, nil
 	}
 

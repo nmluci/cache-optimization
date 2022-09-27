@@ -1,0 +1,1 @@
+alter table userdata drop column access_level int(3);

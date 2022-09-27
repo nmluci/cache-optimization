@@ -27,9 +27,9 @@ var (
 )
 
 var (
-	sqlInsertUserCred = squirrel.Insert("users").Columns("email", "password", "fullname", "created_at", "updated_at")
-	sqlSelectUserCred = squirrel.Select("id", "email", "password", "fullname").From("users")
-	sqlUpdateUserCred = squirrel.Update("users")
+	sqlInsertUserCred = squirrel.Insert("userdata").Columns("email", "password", "fullname", "created_at", "updated_at", "access_level")
+	sqlSelectUserCred = squirrel.Select("id", "email", "password", "fullname", "access_level").From("userdata")
+	sqlUpdateUserCred = squirrel.Update("userdata")
 )
 
 func (repo *repository) FindUserByEmail(ctx context.Context, email string) (res *model.Users, err error) {
@@ -40,7 +40,7 @@ func (repo *repository) FindUserByEmail(ctx context.Context, email string) (res 
 	}
 
 	res = &model.Users{}
-	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname)
+	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
 	if err != nil {
 		repo.logger.Errorf("%s failed to parsed query result: %+v", logTagAuthFindUserByEmail, err)
 		return
@@ -72,7 +72,7 @@ func (repo *repository) FindUserByID(ctx context.Context, id uint64) (res *model
 		return
 	}
 
-	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname)
+	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
 	if err != nil {
 		repo.logger.Errorf("%s failed to parsed query result: %+v", logTagAuthFindUserByID, err)
 		return
@@ -84,10 +84,26 @@ func (repo *repository) FindUserByID(ctx context.Context, id uint64) (res *model
 		return nil, err
 	}
 
-	err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheUser, id), string(byteData), constants.CacheDuration).Err()
+	err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheUser, id), string(byteData), constants.CacheSessionDuration).Err()
 	if err != nil {
 		repo.logger.Errorf("%s failed to insert query result into cache: %+v", logTagAuthFindUserByID, err)
 		return res, nil
+	}
+
+	return
+}
+
+func (repo *repository) ForceFindUserByID(ctx context.Context, id uint64) (res *model.Users, err error) {
+	stmt, args, err := sqlSelectUserCred.Where(squirrel.And{squirrel.Eq{"id": id}, squirrel.Eq{"deleted_at": nil}}).ToSql()
+	if err != nil {
+		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagAuthFindUserByID, err)
+		return
+	}
+
+	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
+	if err != nil {
+		repo.logger.Errorf("%s failed to parsed query result: %+v", logTagAuthFindUserByID, err)
+		return
 	}
 
 	return
@@ -104,7 +120,7 @@ func (repo *repository) InsertNewUser(ctx context.Context, data *model.Users) (e
 
 	defer tx.Rollback()
 
-	stmt, args, err := sqlInsertUserCred.Values(data.Email, data.Password, data.Fullname, time.Now(), time.Now()).ToSql()
+	stmt, args, err := sqlInsertUserCred.Values(data.Email, data.Password, data.Fullname, time.Now(), time.Now(), data.Priv).ToSql()
 	if err != nil {
 		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagAuthInsertUser, err)
 		return
@@ -213,7 +229,7 @@ func (repo *repository) NewUserSession(ctx context.Context, data *model.Users) (
 		return
 	}
 
-	if err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheSessionUser, sKey), string(encodeData), constants.CacheDuration).Err(); err != nil {
+	if err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheSessionUser, sKey), string(encodeData), constants.CacheSessionDuration).Err(); err != nil {
 		repo.logger.Errorf("%s failed to save session key: %+v", logTagNewSession, err)
 		return
 	}

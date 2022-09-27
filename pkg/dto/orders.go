@@ -7,5 +7,6 @@ type ItemMeta struct {
 }
 
 type PublicCheckout struct {
-	Items []*ItemMeta `json:"items"`
+	Items      []*ItemMeta `json:"items"`
+	SessionKey string      `header:"session-id"`
 }
