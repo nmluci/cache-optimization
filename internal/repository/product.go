@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -30,20 +28,38 @@ var (
 )
 
 func (repo *repository) FindProducts(ctx context.Context) (res []*model.Product, err error) {
-	cacheKey, err := repo.redis.Get(ctx, fmt.Sprintf(constants.CacheProducts, "summary")).Result()
+	// cacheKey, err := repo.redis.Get(ctx, constants.CacheProductSummary).Result()
+	// if err != nil && err != redis.Nil {
+	// 	repo.logger.Errorf("%s failed to fetch data from cache: %+v", logTagProductFindAll, err)
+	// 	return
+	// }
+
+	// var stmt string
+	// var args []interface{}
+	// if cacheKey != "" {
+	// 	stmt, args, err = sqlSelectProduct.Where(squirrel.And{squirrel.Expr(fmt.Sprintf("id in (%s)", cacheKey)), squirrel.Eq{"deleted_at": nil}}).ToSql()
+	// } else {
+	// 	stmt, args, err = sqlSelectProduct.Where(squirrel.Eq{"deleted_at": nil}).ToSql()
+	// }
+
+	res = []*model.Product{}
+	val, err := repo.redis.Get(ctx, constants.CacheProductSummary).Result()
 	if err != nil && err != redis.Nil {
 		repo.logger.Errorf("%s failed to fetch data from cache: %+v", logTagProductFindAll, err)
 		return
 	}
 
-	var stmt string
-	var args []interface{}
-	if cacheKey != "" {
-		stmt, args, err = sqlSelectProduct.Where(squirrel.And{squirrel.Expr(fmt.Sprintf("id in %s", cacheKey)), squirrel.Eq{"deleted_at": nil}}).ToSql()
-	} else {
-		stmt, args, err = sqlSelectProduct.Where(squirrel.Eq{"deleted_at": nil}).ToSql()
+	if val != "" {
+		err = json.Unmarshal([]byte(val), &res)
+		if err != nil {
+			repo.logger.Errorf("%s failed to parsing data from cache: %+v", logTagProductFindAll, err)
+			res = []*model.Product{}
+		} else {
+			return
+		}
 	}
 
+	stmt, args, err := sqlSelectProduct.Where(squirrel.Eq{"deleted_at": nil}).ToSql()
 	if err != nil {
 		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagProductFindAll, err)
 		return
@@ -55,8 +71,7 @@ func (repo *repository) FindProducts(ctx context.Context) (res []*model.Product,
 		return
 	}
 
-	res = []*model.Product{}
-	productID := []string{}
+	// productID := []string{}
 	for rows.Next() {
 		temp := &model.Product{}
 		err = rows.Scan(&temp.ID, &temp.Name, &temp.Category, &temp.Description, &temp.UnitPrice, &temp.Qty)
@@ -64,11 +79,17 @@ func (repo *repository) FindProducts(ctx context.Context) (res []*model.Product,
 			repo.logger.Errorf("%s failed to map query result: %+v", logTagProductFindAll, err)
 		}
 
-		productID = append(productID, strconv.FormatUint(temp.ID, 10))
+		// productID = append(productID, strconv.FormatUint(temp.ID, 10))
 		res = append(res, temp)
 	}
 
-	err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheProducts, "summary"), string(strings.Join(productID, ",")), constants.CacheDuration).Err()
+	byteData, err := json.Marshal(res)
+	if err != nil {
+		repo.logger.Errorf("%s failed to encode query result: %+v", logTagProductFindAll, err)
+		return nil, err
+	}
+
+	err = repo.redis.Set(ctx, constants.CacheProductSummary, string(byteData), constants.CacheDuration).Err()
 	if err != nil {
 		repo.logger.Errorf("%s failed to insert query result into cache: %+v", logTagProductFindAll, err)
 		return res, nil
@@ -101,9 +122,11 @@ func (repo *repository) FindProductByID(ctx context.Context, id uint64) (res *mo
 	}
 
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Name, &res.Category, &res.Description, &res.UnitPrice, &res.Qty)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query results: %+v", logTagProductFindByID, err)
 		return
+	} else if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
 	byteData, err := json.Marshal(res)
@@ -156,9 +179,11 @@ func (repo *repository) ForceFindProductByID(ctx context.Context, id uint64) (re
 	}
 
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Name, &res.Category, &res.Description, &res.UnitPrice, &res.Qty)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query results: %+v", logTagProductFindByID, err)
 		return
+	} else if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
 	return
@@ -174,7 +199,7 @@ func (repo *repository) InsertNewProduct(ctx context.Context, data *model.Produc
 	}
 
 	defer tx.Rollback()
-	stmt, args, err := sqlInsertProduct.Values(data.Name, data.Category, data.UnitPrice, data.Qty, time.Now(), time.Now()).ToSql()
+	stmt, args, err := sqlInsertProduct.Values(data.Name, data.Category, data.Description, data.UnitPrice, data.Qty, time.Now(), time.Now()).ToSql()
 	if err != nil {
 		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagProductStore, err)
 		return

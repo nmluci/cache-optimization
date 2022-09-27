@@ -2,24 +2,26 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"github.com/nmluci/cache-optimization/internal/model"
 	"github.com/nmluci/cache-optimization/internal/util/echttputil"
 	"github.com/nmluci/cache-optimization/pkg/dto"
 	"github.com/nmluci/cache-optimization/pkg/errs"
 )
 
 type RegisterUserHandler func(ctx context.Context, payload *dto.PublicUserPayload) (err error)
-type LoginUserHandler func(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, err error)
+type LoginUserHandler func(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, usr *model.Users, err error)
 type EditUserHandler func(ctx context.Context, id uint64, payload *dto.PublicUserPayload) (err error)
 type DeleteUserHandler func(ctx context.Context, id uint64, sessionKey string) (err error)
 
 func HandleRegisterUser(handler RegisterUserHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var req *dto.PublicUserPayload
+		req := &dto.PublicUserPayload{}
 		if err = c.Bind(req); err != nil {
-			err = errs.ErrBadRequest
+			fmt.Println("err:", err)
 			return echttputil.WriteErrorResponse(c, err)
 		}
 
@@ -39,35 +41,36 @@ func HandleRegisterUser(handler RegisterUserHandler) echo.HandlerFunc {
 
 func HandleLoginUser(handler LoginUserHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var req *dto.PublicUserLoginPayload
+		req := &dto.PublicUserLoginPayload{}
 		if err = c.Bind(req); err != nil {
 			err = errs.ErrBadRequest
 			return echttputil.WriteErrorResponse(c, err)
 		}
 
-		sessionKey, err := handler(c.Request().Context(), req)
+		sessionKey, userID, err := handler(c.Request().Context(), req)
 		if err != nil {
 			return echttputil.WriteErrorResponse(c, nil)
 		}
 
 		c.Response().Header().Set("Session-Id", sessionKey)
 
-		return echttputil.WriteSuccessResponse(c, nil)
+		return echttputil.WriteSuccessResponse(c, userID)
 	}
 }
 
 func HandleEditUser(handler EditUserHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var req *dto.PublicUserPayload
+		req := &dto.PublicUserPayload{}
 		if err = c.Bind(req); err != nil {
 			err = errs.ErrBadRequest
 			return echttputil.WriteErrorResponse(c, err)
 		}
 
-		id := c.QueryParam("id")
+		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			fmt.Println(err)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		sessionKey := c.Request().Header.Get("Session-Id")
@@ -77,7 +80,7 @@ func HandleEditUser(handler EditUserHandler) echo.HandlerFunc {
 
 		err = handler(c.Request().Context(), parsedId, req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)
@@ -86,35 +89,35 @@ func HandleEditUser(handler EditUserHandler) echo.HandlerFunc {
 
 func HandleNCLoginUser(handler LoginUserHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var req *dto.PublicUserLoginPayload
+		req := &dto.PublicUserLoginPayload{}
 		if err = c.Bind(req); err != nil {
 			err = errs.ErrBadRequest
 			return echttputil.WriteErrorResponse(c, err)
 		}
 
-		sessionKey, err := handler(c.Request().Context(), req)
+		sessionKey, userID, err := handler(c.Request().Context(), req)
 		if err != nil {
 			return echttputil.WriteErrorResponse(c, nil)
 		}
 
 		c.Response().Header().Set("Session-Id", sessionKey)
 
-		return echttputil.WriteSuccessResponse(c, nil)
+		return echttputil.WriteSuccessResponse(c, userID)
 	}
 }
 
 func HandleNCEditUser(handler EditUserHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var req *dto.PublicUserPayload
+		req := &dto.PublicUserPayload{}
 		if err = c.Bind(req); err != nil {
 			err = errs.ErrBadRequest
 			return echttputil.WriteErrorResponse(c, err)
 		}
 
-		id := c.QueryParam("id")
+		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		sessionKey := c.Request().Header.Get("Session-Id")
@@ -124,7 +127,7 @@ func HandleNCEditUser(handler EditUserHandler) echo.HandlerFunc {
 
 		err = handler(c.Request().Context(), parsedId, req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)
@@ -133,7 +136,7 @@ func HandleNCEditUser(handler EditUserHandler) echo.HandlerFunc {
 
 func HandleDeleteUser(handler DeleteUserHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		id := c.QueryParam("id")
+		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
 			return echttputil.WriteErrorResponse(c, nil)

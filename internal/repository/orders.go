@@ -55,6 +55,11 @@ func (repo *repository) CheckoutOrders(ctx context.Context, payload *indto.Order
 		}
 	}
 
+	if err = tx.Commit(); err != nil {
+		repo.logger.Errorf("%s failed to commit transaction: %+v", logTagCheckout, err)
+		return
+	}
+
 	return
 }
 
@@ -100,7 +105,7 @@ func (repo *repository) insertDetail(ctx context.Context, tx *sql.Tx, orderID ui
 func (repo *repository) updateProductQty(ctx context.Context, tx *sql.Tx, productID uint64, qty uint64) (err error) {
 	stmt := fmt.Sprintf("update products set qty = (case when qty - %d < 0 then 0 else qty - %d end) where id = %d", qty, qty, productID)
 
-	_, err = tx.ExecContext(ctx, stmt, nil)
+	_, err = tx.ExecContext(ctx, stmt)
 	if err != nil {
 		repo.logger.Errorf("%s failed to update product listing: %+v", logTagUpdateProduct, err)
 		return

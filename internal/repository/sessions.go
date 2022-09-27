@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -11,9 +12,10 @@ import (
 )
 
 var (
-	logTagUserSessionNew        = "[SessionNew]"
-	logTagUserSessionInvalidate = "[SessionInvalidate]"
-	logTagUserSessionFindByKey  = "[SessionFindByKey]"
+	logTagUserSessionNew            = "[SessionNew]"
+	logTagUserSessionInvalidate     = "[SessionInvalidate]"
+	logTagUserSessionFindByKey      = "[SessionFindByKey]"
+	logTagUserSessionInvalidateByID = "[SessionNCInvalidateByID"
 )
 
 var (
@@ -33,9 +35,11 @@ func (repo *repository) FindUserSessionByKey(ctx context.Context, key string) (r
 
 	res = &model.Users{}
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query results: %+v", logTagUserSessionFindByKey, err)
 		return
+	} else if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
 	return
@@ -54,6 +58,11 @@ func (repo *repository) NewSession(ctx context.Context, data *model.Users) (sess
 		if val == nil {
 			break
 		}
+	}
+
+	if err = repo.invalidateSessionKeyByUserID(ctx, data.ID); err != nil {
+		repo.logger.Errorf("%s failed to invalidate old session key: %+v", logTagUserSessionNew, err)
+		return
 	}
 
 	expiredUnix := time.Now().Add(constants.CacheSessionDuration).Unix()
@@ -92,6 +101,22 @@ func (repo *repository) InvalidateSessionKey(ctx context.Context, sessionKey str
 	_, err = repo.mariaDB.ExecContext(ctx, stmt, args...)
 	if err != nil {
 		repo.logger.Errorf("%s failed to delete session key: %+v", logTagUserSessionNew, err)
+		return
+	}
+
+	return
+}
+
+func (repo *repository) invalidateSessionKeyByUserID(ctx context.Context, id uint64) (err error) {
+	stmt, args, err := sqlDeleteSession.Where(squirrel.Eq{"user_id": id}).ToSql()
+	if err != nil {
+		repo.logger.Errorf("%s failed to prepare SQL statement: %+v", logTagUserSessionInvalidateByID, err)
+		return
+	}
+
+	_, err = repo.mariaDB.ExecContext(ctx, stmt, args...)
+	if err != nil {
+		repo.logger.Errorf("%s failed to delete session key: %+v", logTagUserSessionInvalidateByID, err)
 		return
 	}
 

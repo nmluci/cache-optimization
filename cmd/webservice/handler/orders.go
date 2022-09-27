@@ -13,7 +13,7 @@ type CheckoutHandler func(ctx context.Context, payload *dto.PublicCheckout) (err
 
 func HandleCheckout(handler CheckoutHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var req *dto.PublicCheckout
+		req := &dto.PublicCheckout{}
 		if err = c.Bind(req); err != nil {
 			err = errs.ErrBadRequest
 			return echttputil.WriteErrorResponse(c, err)

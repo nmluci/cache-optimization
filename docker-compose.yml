@@ -5,7 +5,7 @@ services:
     image: nmluci/cache-optimization:backend
     build: .
     ports:
-      - "5000:1972"
+      - "3000:4211"
   cache_redis:
     container_name: cache_redis
     image: redis:7.0.4

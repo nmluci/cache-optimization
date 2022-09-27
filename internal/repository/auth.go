@@ -41,9 +41,11 @@ func (repo *repository) FindUserByEmail(ctx context.Context, email string) (res 
 
 	res = &model.Users{}
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query result: %+v", logTagAuthFindUserByEmail, err)
 		return
+	} else if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
 	return
@@ -73,9 +75,11 @@ func (repo *repository) FindUserByID(ctx context.Context, id uint64) (res *model
 	}
 
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query result: %+v", logTagAuthFindUserByID, err)
 		return
+	} else if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
 	byteData, err := json.Marshal(res)
@@ -100,10 +104,13 @@ func (repo *repository) ForceFindUserByID(ctx context.Context, id uint64) (res *
 		return
 	}
 
+	res = &model.Users{}
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Email, &res.Password, &res.Fullname, &res.Priv)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query result: %+v", logTagAuthFindUserByID, err)
 		return
+	} else if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
 	return
@@ -223,6 +230,15 @@ func (repo *repository) NewUserSession(ctx context.Context, data *model.Users) (
 		}
 	}
 
+	oldSKey, err := repo.redis.Get(ctx, fmt.Sprintf(constants.CacheSessionIdx, data.ID)).Result()
+	if err != nil && err != redis.Nil {
+		repo.logger.Errorf("%s failed to fetch old session key: %+v", logTagNewSession, err)
+		return
+	} else if err != redis.Nil {
+		repo.redis.Del(ctx, fmt.Sprintf(constants.CacheSessionIdx, data.ID))
+		repo.redis.Del(ctx, fmt.Sprintf(constants.CacheSessionUser, oldSKey))
+	}
+
 	encodeData, err := json.Marshal(data)
 	if err != nil {
 		repo.logger.Errorf("%s failed to encode profile data: %+v", logTagNewSession, err)
@@ -231,6 +247,12 @@ func (repo *repository) NewUserSession(ctx context.Context, data *model.Users) (
 
 	if err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheSessionUser, sKey), string(encodeData), constants.CacheSessionDuration).Err(); err != nil {
 		repo.logger.Errorf("%s failed to save session key: %+v", logTagNewSession, err)
+		return
+	}
+
+	if err = repo.redis.Set(ctx, fmt.Sprintf(constants.CacheSessionIdx, data.ID), sKey, constants.CacheSessionDuration).Err(); err != nil {
+		repo.logger.Errorf("%s failed to save session key: %+v", logTagNewSession, err)
+		repo.redis.Del(ctx, fmt.Sprintf(constants.CacheSessionUser, sKey))
 		return
 	}
 
@@ -272,6 +294,19 @@ func (repo *repository) InvalidateUserSession(ctx context.Context, sessionKey st
 	}
 
 	err = repo.redis.Del(ctx, fmt.Sprintf(constants.CacheSessionUser, sessionKey)).Err()
+	if err != nil {
+		repo.logger.Errorf("%s failed to remove user session: %+v", logTagInvalidateSession, err)
+		return
+	}
+
+	res := &model.Users{}
+	err = json.Unmarshal([]byte(val), res)
+	if err != nil {
+		repo.logger.Errorf("%s failed to decoded userdata: %+v", logTagInvalidateSession, err)
+		return
+	}
+
+	err = repo.redis.Del(ctx, fmt.Sprintf(constants.CacheSessionIdx, res.ID)).Err()
 	if err != nil {
 		repo.logger.Errorf("%s failed to remove user session: %+v", logTagInvalidateSession, err)
 		return

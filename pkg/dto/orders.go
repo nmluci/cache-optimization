@@ -1,9 +1,9 @@
 package dto
 
 type ItemMeta struct {
-	ProductID int64
-	Qty       int64
-	Price     int64
+	ProductID int64 `json:"product_id"`
+	Qty       int64 `json:"qty"`
+	Price     int64 `json:"price"`
 }
 
 type PublicCheckout struct {

@@ -28,7 +28,7 @@ func (s *service) Register(ctx context.Context, payload *dto.PublicUserPayload) 
 
 	if exists != nil {
 		s.logger.Errorf("%s user already exists", logTagRegister)
-		return
+		return errs.ErrBadRequest
 	}
 
 	encPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
@@ -59,7 +59,7 @@ func (s *service) Register(ctx context.Context, payload *dto.PublicUserPayload) 
 	return
 }
 
-func (s *service) Login(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, err error) {
+func (s *service) Login(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, usr *model.Users, err error) {
 	exists, err := s.repository.FindUserByEmail(ctx, payload.Email)
 	if err != nil {
 		s.logger.Errorf("%s failed to check email duplication: %+v", logTagLogin, err)
@@ -74,13 +74,14 @@ func (s *service) Login(ctx context.Context, payload *dto.PublicUserLoginPayload
 	sessionKey, err = s.repository.NewUserSession(ctx, exists)
 	if err != nil {
 		s.logger.Errorf("%s failed generate new session: %+v", logTagLogin, err)
-		return "", err
+		return "", nil, err
 	}
 
-	return
+	exists.Password = ""
+	return sessionKey, exists, nil
 }
 
-func (s *service) ForceLogin(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, err error) {
+func (s *service) ForceLogin(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, usr *model.Users, err error) {
 	exists, err := s.repository.FindUserByEmail(ctx, payload.Email)
 	if err != nil {
 		s.logger.Errorf("%s failed to check email duplication: %+v", logTagLoginNC, err)
@@ -95,10 +96,10 @@ func (s *service) ForceLogin(ctx context.Context, payload *dto.PublicUserLoginPa
 	sessionKey, err = s.repository.NewSession(ctx, exists)
 	if err != nil {
 		s.logger.Errorf("%s failed generate new session: %+v", logTagLoginNC, err)
-		return "", err
+		return "", nil, err
 	}
-
-	return
+	exists.Password = ""
+	return sessionKey, exists, nil
 }
 
 func (s *service) EditUser(ctx context.Context, id uint64, payload *dto.PublicUserPayload) (err error) {
@@ -119,8 +120,8 @@ func (s *service) EditUser(ctx context.Context, id uint64, payload *dto.PublicUs
 		return err
 	}
 
-	if user != nil {
-		s.logger.Errorf("%s user already exists", logTagRegister)
+	if user == nil {
+		s.logger.Errorf("%s user does not exists", logTagRegister)
 		return
 	}
 
@@ -136,7 +137,7 @@ func (s *service) EditUser(ctx context.Context, id uint64, payload *dto.PublicUs
 		Password: string(encPassword),
 	}
 
-	err = s.repository.InsertNewUser(ctx, usr)
+	err = s.repository.UpdateUserByID(ctx, id, usr)
 	if err != nil {
 		s.logger.Errorf("%s failed to insert new user: %+v", logTagEditUser, err)
 		return
@@ -163,8 +164,8 @@ func (s *service) ForceEditUser(ctx context.Context, id uint64, payload *dto.Pub
 		return err
 	}
 
-	if user != nil {
-		s.logger.Errorf("%s user already exists", logTagEditUserNC)
+	if user == nil {
+		s.logger.Errorf("%s user does not exists", logTagEditUserNC)
 		return
 	}
 
@@ -180,7 +181,7 @@ func (s *service) ForceEditUser(ctx context.Context, id uint64, payload *dto.Pub
 		Password: string(encPassword),
 	}
 
-	err = s.repository.InsertNewUser(ctx, usr)
+	err = s.repository.UpdateUserByID(ctx, id, usr)
 	if err != nil {
 		s.logger.Errorf("%s failed to insert new user: %+v", logTagEditUserNC, err)
 		return
@@ -207,9 +208,9 @@ func (s *service) DeleteUser(ctx context.Context, id uint64, sessionKey string) 
 		return err
 	}
 
-	if user != nil {
-		s.logger.Errorf("%s user already exists", logTagDeleteUser)
-		return
+	if user == nil {
+		s.logger.Errorf("%s user does not exists", logTagDeleteUser)
+		return errs.ErrBadRequest
 	}
 
 	err = s.repository.DeleteUserByID(ctx, id)

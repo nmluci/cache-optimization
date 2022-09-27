@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"github.com/nmluci/cache-optimization/internal/repository"
@@ -14,11 +14,24 @@ func SessionAuthenticator(r repository.Repository, authPriv ...uint64) echo.Midd
 		return func(c echo.Context) (err error) {
 			sessionKey := c.Request().Header.Get("Session-Id")
 			if sessionKey == "" {
+				fmt.Println("session key is empty")
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 
-			user, err := r.FindUserBySession(context.TODO(), sessionKey)
+			user, err := r.FindUserBySession(c.Request().Context(), sessionKey)
 			if err != nil {
+				fmt.Println("an error occured while fetching user session")
+				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
+			}
+
+			// revalidate
+			val, err := r.FindUserByID(c.Request().Context(), user.ID)
+			if err != nil {
+				fmt.Println("an error occured while fetching userdata from db")
+				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
+			} else if val == nil {
+				fmt.Println("user not existed anymore")
+				r.InvalidateSessionKey(c.Request().Context(), sessionKey)
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 
@@ -41,8 +54,12 @@ func SessionAuthenticatorNoCache(r repository.Repository, authPriv ...uint64) ec
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 
-			user, err := r.FindUserSessionByKey(context.TODO(), sessionKey)
+			user, err := r.FindUserSessionByKey(c.Request().Context(), sessionKey)
 			if err != nil {
+				fmt.Println("an error occured while fetching user session")
+				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
+			} else if user == nil {
+				r.InvalidateSessionKey(c.Request().Context(), sessionKey)
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 

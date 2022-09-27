@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nmluci/cache-optimization/internal/model"
+	"github.com/nmluci/cache-optimization/pkg/dto"
 )
 
 var (
@@ -76,8 +77,16 @@ func (s *service) ForceFindProducts(ctx context.Context) (res []*model.Product, 
 	return res, nil
 }
 
-func (s *service) InsertProduct(ctx context.Context, payload *model.Product) (err error) {
-	err = s.repository.InsertNewProduct(ctx, payload)
+func (s *service) InsertProduct(ctx context.Context, payload *dto.PublicProduct) (err error) {
+	data := &model.Product{
+		Name:        payload.Name,
+		Category:    payload.Category,
+		Description: payload.Description,
+		UnitPrice:   payload.UnitPrice,
+		Qty:         payload.Qty,
+	}
+
+	err = s.repository.InsertNewProduct(ctx, data)
 	if err != nil {
 		s.logger.Errorf("%s failed to insert product data: %+v", logTagNewProduct, err)
 		return

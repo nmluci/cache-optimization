@@ -49,6 +49,7 @@ func Start(conf *config.Config, logger *logrus.Entry) {
 	router.Init(&router.InitRouterParams{
 		Logger:  logger,
 		Service: service,
+		Repo:    repo,
 		Ec:      ec,
 		Conf:    conf,
 	})

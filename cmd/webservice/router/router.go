@@ -8,8 +8,6 @@ import (
 	"github.com/nmluci/cache-optimization/internal/repository"
 	"github.com/nmluci/cache-optimization/internal/service"
 	"github.com/sirupsen/logrus"
-
-	e_middleware "github.com/labstack/echo/v4/middleware"
 )
 
 type InitRouterParams struct {
@@ -23,7 +21,7 @@ type InitRouterParams struct {
 func Init(params *InitRouterParams) {
 	params.Ec.GET(PingPath, handler.HandlePing(params.Service.Ping))
 
-	params.Ec.Use(e_middleware.CORS())
+	// params.Ec.Use(e_middleware.CORS())
 
 	// Cacheable
 	params.Ec.POST(AuthRegisterPath, handler.HandleRegisterUser(params.Service.Register))
@@ -36,6 +34,7 @@ func Init(params *InitRouterParams) {
 	params.Ec.GET(ProductsIDPath, handler.HandleProductDetail(params.Service.FindProductByID), middleware.SessionAuthenticator(params.Repo, 1, 2))
 	params.Ec.POST(ProductsPath, handler.HandleStoreProduct(params.Service.InsertProduct), middleware.SessionAuthenticator(params.Repo, 2))
 	params.Ec.PUT(ProductsIDPath, handler.HandleEditProduct(params.Service.UpdateProduct), middleware.SessionAuthenticator(params.Repo, 2))
+	params.Ec.DELETE(ProductsIDPath, handler.HandleDeleteProduct(params.Service.DeleteProduct), middleware.SessionAuthenticator(params.Repo, 2))
 
 	params.Ec.POST(OrderCheckoutPath, handler.HandleCheckout(params.Service.Checkout), middleware.SessionAuthenticator(params.Repo, 1, 2))
 
