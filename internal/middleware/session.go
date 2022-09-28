@@ -20,7 +20,7 @@ func SessionAuthenticator(r repository.Repository, authPriv ...uint64) echo.Midd
 
 			user, err := r.FindUserBySession(c.Request().Context(), sessionKey)
 			if err != nil {
-				fmt.Println("an error occured while fetching user session")
+				fmt.Printf("an error occured while fetching user session: %+v\n", err)
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 
@@ -51,12 +51,13 @@ func SessionAuthenticatorNoCache(r repository.Repository, authPriv ...uint64) ec
 		return func(c echo.Context) (err error) {
 			sessionKey := c.Request().Header.Get("Session-Id")
 			if sessionKey == "" {
+				fmt.Println("empty session id")
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 
 			user, err := r.FindUserSessionByKey(c.Request().Context(), sessionKey)
 			if err != nil {
-				fmt.Println("an error occured while fetching user session")
+				fmt.Printf("an error occured while fetching user session: %+v\n", err)
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			} else if user == nil {
 				r.InvalidateSessionKey(c.Request().Context(), sessionKey)
@@ -69,6 +70,7 @@ func SessionAuthenticatorNoCache(r repository.Repository, authPriv ...uint64) ec
 				}
 			}
 
+			fmt.Println("NO PRIV")
 			return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 		}
 	}

@@ -15,8 +15,9 @@ const (
 	AuthRegisterPath = "/v1/auth/register"
 
 	// NON CACHE
-	NCAuthLoginPath  = "/v1/nc/auth/login"
-	NCUserIDPath     = "/v1/nc/users/:id"
-	NCProductsPath   = "/v1/nc/products"
-	NCProductsIDPath = "/v1/nc/products/:id"
+	NCAuthLoginPath     = "/v1/nc/auth/login"
+	NCUserIDPath        = "/v1/nc/users/:id"
+	NCProductsPath      = "/v1/nc/products"
+	NCProductsIDPath    = "/v1/nc/products/:id"
+	NCOrderCheckoutPath = "/v1/nc/checkout"
 )

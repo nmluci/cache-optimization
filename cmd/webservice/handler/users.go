@@ -153,3 +153,23 @@ func HandleDeleteUser(handler DeleteUserHandler) echo.HandlerFunc {
 
 	}
 }
+
+func HandleNCDeleteUser(handler DeleteUserHandler) echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		id := c.Param("id")
+		parsedId, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			return echttputil.WriteErrorResponse(c, nil)
+		}
+
+		sessionKey := c.Request().Header.Get("Session-Id")
+
+		err = handler(c.Request().Context(), parsedId, sessionKey)
+		if err != nil {
+			return echttputil.WriteErrorResponse(c, nil)
+		}
+
+		return echttputil.WriteSuccessResponse(c, nil)
+
+	}
+}

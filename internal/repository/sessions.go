@@ -25,7 +25,7 @@ var (
 )
 
 func (repo *repository) FindUserSessionByKey(ctx context.Context, key string) (res *model.Users, err error) {
-	expiredUnix := time.Now().Add(constants.CacheSessionDuration).Unix()
+	expiredUnix := time.Now().Unix()
 
 	stmt, args, err := sqlSelectSession.Where(squirrel.And{squirrel.Eq{"session_id": key}, squirrel.Lt{"expired_at": expiredUnix}}).ToSql()
 	if err != nil {

@@ -23,7 +23,7 @@ func (s *service) Register(ctx context.Context, payload *dto.PublicUserPayload) 
 	exists, err := s.repository.FindUserByEmail(ctx, payload.Email)
 	if err != nil {
 		s.logger.Errorf("%s failed to check email duplication: %+v", logTagRegister, err)
-		return err
+		return errs.ErrDuplicated
 	}
 
 	if exists != nil {
@@ -68,6 +68,7 @@ func (s *service) Login(ctx context.Context, payload *dto.PublicUserLoginPayload
 
 	if exists == nil {
 		s.logger.Errorf("%s user not registered: %+v", logTagLogin, err)
+		err = errs.ErrBadRequest
 		return
 	}
 
@@ -90,6 +91,7 @@ func (s *service) ForceLogin(ctx context.Context, payload *dto.PublicUserLoginPa
 
 	if exists == nil {
 		s.logger.Errorf("%s user not registered: %+v", logTagLoginNC, err)
+		err = errs.ErrBadRequest
 		return
 	}
 
@@ -122,6 +124,7 @@ func (s *service) EditUser(ctx context.Context, id uint64, payload *dto.PublicUs
 
 	if user == nil {
 		s.logger.Errorf("%s user does not exists", logTagRegister)
+		err = errs.ErrBadRequest
 		return
 	}
 
@@ -166,6 +169,7 @@ func (s *service) ForceEditUser(ctx context.Context, id uint64, payload *dto.Pub
 
 	if user == nil {
 		s.logger.Errorf("%s user does not exists", logTagEditUserNC)
+		err = errs.ErrBadRequest
 		return
 	}
 
@@ -215,7 +219,39 @@ func (s *service) DeleteUser(ctx context.Context, id uint64, sessionKey string) 
 
 	err = s.repository.DeleteUserByID(ctx, id)
 	if err != nil {
-		s.logger.Errorf("%s failed to insert new user: %+v", logTagDeleteUser, err)
+		s.logger.Errorf("%s failed to delete user: %+v", logTagDeleteUser, err)
+		return
+	}
+
+	return
+}
+
+func (s *service) ForceDeleteUser(ctx context.Context, id uint64, sessionKey string) (err error) {
+	session, err := s.repository.FindUserSessionByKey(ctx, sessionKey)
+	if err != nil {
+		s.logger.Errorf("%s failed to fetch userdata from session key: %+v", logTagDeleteUser, err)
+		return
+	}
+
+	if session.ID != id && session.Priv != 2 {
+		s.logger.Errorf("%s cannot override higher user accounts", logTagDeleteUser)
+		return errs.ErrBadRequest
+	}
+
+	user, err := s.repository.FindUserByID(ctx, id)
+	if err != nil {
+		s.logger.Errorf("%s failed to check email duplication: %+v", logTagDeleteUser, err)
+		return err
+	}
+
+	if user == nil {
+		s.logger.Errorf("%s user does not exists", logTagDeleteUser)
+		return errs.ErrBadRequest
+	}
+
+	err = s.repository.DeleteUserByID(ctx, id)
+	if err != nil {
+		s.logger.Errorf("%s failed to delete user: %+v", logTagDeleteUser, err)
 		return
 	}
 

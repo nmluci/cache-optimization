@@ -178,6 +178,7 @@ func (repo *repository) ForceFindProductByID(ctx context.Context, id uint64) (re
 		return
 	}
 
+	res = &model.Product{}
 	err = repo.mariaDB.QueryRowContext(ctx, stmt, args...).Scan(&res.ID, &res.Name, &res.Category, &res.Description, &res.UnitPrice, &res.Qty)
 	if err != nil && err != sql.ErrNoRows {
 		repo.logger.Errorf("%s failed to parsed query results: %+v", logTagProductFindByID, err)

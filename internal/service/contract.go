@@ -28,8 +28,10 @@ type Service interface {
 	// NO CACHE
 	ForceLogin(ctx context.Context, payload *dto.PublicUserLoginPayload) (sessionKey string, usr *model.Users, err error)
 	ForceEditUser(ctx context.Context, id uint64, payload *dto.PublicUserPayload) (err error)
+	ForceDeleteUser(ctx context.Context, id uint64, sessionKey string) (err error)
 	ForceFindProductByID(ctx context.Context, id uint64) (res *model.Product, err error)
 	ForceFindProducts(ctx context.Context) (res []*model.Product, err error)
+	ForceCheckout(ctx context.Context, payload *dto.PublicCheckout) (err error)
 }
 
 type service struct {
