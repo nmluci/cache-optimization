@@ -28,7 +28,7 @@ func (s *service) Register(ctx context.Context, payload *dto.PublicUserPayload) 
 
 	if exists != nil {
 		s.logger.Errorf("%s user already exists", logTagRegister)
-		return errs.ErrBadRequest
+		return errs.ErrDuplicated
 	}
 
 	encPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)

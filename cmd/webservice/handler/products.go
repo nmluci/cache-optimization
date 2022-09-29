@@ -22,12 +22,12 @@ func HandleProductDetail(handler ProductDetailHandler) echo.HandlerFunc {
 		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		data, err := handler(c.Request().Context(), parsedId)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, data)
@@ -38,7 +38,7 @@ func HandleAllProduct(handler AllProductHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		data, err := handler(c.Request().Context())
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, data)
@@ -50,12 +50,12 @@ func HandleNCProductDetail(handler ProductDetailHandler) echo.HandlerFunc {
 		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		data, err := handler(c.Request().Context(), parsedId)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, data)
@@ -66,7 +66,7 @@ func HandleNCAllProduct(handler AllProductHandler) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		data, err := handler(c.Request().Context())
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, data)
@@ -83,7 +83,7 @@ func HandleStoreProduct(handler StoreProductHandler) echo.HandlerFunc {
 
 		err = handler(c.Request().Context(), req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)
@@ -101,12 +101,12 @@ func HandleEditProduct(handler UpdateProductHandler) echo.HandlerFunc {
 		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		err = handler(c.Request().Context(), parsedId, req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)
@@ -118,12 +118,12 @@ func HandleDeleteProduct(handler DeleteProductHandler) echo.HandlerFunc {
 		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		err = handler(c.Request().Context(), parsedId)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)

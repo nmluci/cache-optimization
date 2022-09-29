@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 go build -o /app/main
 FROM alpine:3.16.0 as webservice
 WORKDIR /app
 
-EXPOSE 5000
+EXPOSE 3000
 
 RUN apk update
 RUN apk add --no-cache tzdata

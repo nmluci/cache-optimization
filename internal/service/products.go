@@ -5,6 +5,7 @@ import (
 
 	"github.com/nmluci/cache-optimization/internal/model"
 	"github.com/nmluci/cache-optimization/pkg/dto"
+	"github.com/nmluci/cache-optimization/pkg/errs"
 )
 
 var (
@@ -26,7 +27,7 @@ func (s *service) FindProductByID(ctx context.Context, id uint64) (res *model.Pr
 
 	if res == nil {
 		s.logger.Errorf("%s productID: %d not found", logTagFindByIDProduct, id)
-		return nil, nil
+		return nil, errs.ErrNotFound
 	}
 
 	return res, nil
@@ -41,7 +42,7 @@ func (s *service) FindProducts(ctx context.Context) (res []*model.Product, err e
 
 	if res == nil {
 		s.logger.Errorf("%s not found", logTagFindAllProduct)
-		return nil, nil
+		return nil, errs.ErrNotFound
 	}
 
 	return res, nil
@@ -56,7 +57,7 @@ func (s *service) ForceFindProductByID(ctx context.Context, id uint64) (res *mod
 
 	if res == nil {
 		s.logger.Errorf("%s productID: %d not found", logTagFindByIDProductNC, id)
-		return nil, nil
+		return nil, errs.ErrNotFound
 	}
 
 	return res, nil
@@ -71,7 +72,7 @@ func (s *service) ForceFindProducts(ctx context.Context) (res []*model.Product, 
 
 	if res == nil {
 		s.logger.Errorf("%s not found", logTagFindAllProductNC)
-		return nil, nil
+		return nil, errs.ErrNotFound
 	}
 
 	return res, nil

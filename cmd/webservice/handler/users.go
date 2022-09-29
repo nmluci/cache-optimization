@@ -32,7 +32,7 @@ func HandleRegisterUser(handler RegisterUserHandler) echo.HandlerFunc {
 
 		err = handler(c.Request().Context(), req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)
@@ -49,7 +49,7 @@ func HandleLoginUser(handler LoginUserHandler) echo.HandlerFunc {
 
 		sessionKey, userID, err := handler(c.Request().Context(), req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		c.Response().Header().Set("Session-Id", sessionKey)
@@ -97,7 +97,7 @@ func HandleNCLoginUser(handler LoginUserHandler) echo.HandlerFunc {
 
 		sessionKey, userID, err := handler(c.Request().Context(), req)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		c.Response().Header().Set("Session-Id", sessionKey)
@@ -139,14 +139,14 @@ func HandleDeleteUser(handler DeleteUserHandler) echo.HandlerFunc {
 		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		sessionKey := c.Request().Header.Get("Session-Id")
 
 		err = handler(c.Request().Context(), parsedId, sessionKey)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)
@@ -159,14 +159,14 @@ func HandleNCDeleteUser(handler DeleteUserHandler) echo.HandlerFunc {
 		id := c.Param("id")
 		parsedId, err := strconv.ParseUint(id, 10, 64)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		sessionKey := c.Request().Header.Get("Session-Id")
 
 		err = handler(c.Request().Context(), parsedId, sessionKey)
 		if err != nil {
-			return echttputil.WriteErrorResponse(c, nil)
+			return echttputil.WriteErrorResponse(c, err)
 		}
 
 		return echttputil.WriteSuccessResponse(c, nil)

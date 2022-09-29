@@ -13,6 +13,8 @@ var (
 	ErrUnknown      = errors.New("internal server error")
 	ErrUnauthorized = errors.New("unauthorized")
 	ErrDuplicated   = errors.New("duplicated data found")
+	ErrNotFound     = errors.New("data not found")
+	// ErrDummyError   = errors.New("catched an dummy")
 )
 
 const (
@@ -20,6 +22,8 @@ const (
 	ErrCodeBadRequest   constant.ErrCode = 2
 	ErrCodeUnauthorized constant.ErrCode = 3
 	ErrCodeDuplicated   constant.ErrCode = 4
+	ErrCodeNotFound     constant.ErrCode = 5
+	ErrCodeDummyError   constant.ErrCode = 99
 )
 
 const (
@@ -28,6 +32,7 @@ const (
 	ErrStatusNotLoggedIn = http.StatusUnauthorized
 	ErrStatusNoAccess    = http.StatusForbidden
 	ErrStatusDuplicated  = http.StatusConflict
+	ErrStatusNotFound    = http.StatusNotFound
 )
 
 var errorMap = map[error]dto.ErrorResponse{
@@ -35,6 +40,8 @@ var errorMap = map[error]dto.ErrorResponse{
 	ErrBadRequest:   ErrorResponse(ErrStatusClient, ErrCodeBadRequest, ErrBadRequest),
 	ErrUnauthorized: ErrorResponse(ErrStatusNoAccess, ErrCodeUnauthorized, ErrUnauthorized),
 	ErrDuplicated:   ErrorResponse(ErrStatusDuplicated, ErrCodeDuplicated, ErrDuplicated),
+	ErrNotFound:     ErrorResponse(ErrStatusNotFound, ErrCodeNotFound, ErrNotFound),
+	// ErrDummyError:   ErrorResponse(ErrStatusClient, ErrCodeDummyError, ErrDummyError),
 }
 
 func ErrorResponse(status int, code constant.ErrCode, err error) dto.ErrorResponse {

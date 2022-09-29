@@ -5,7 +5,7 @@ services:
     image: nmluci/cache-optimization:backend
     build: .
     ports:
-      - "3000:4211"
+      - "3000:3000"
   cache_redis:
     container_name: cache_redis
     image: redis:7.0.4
@@ -17,6 +17,7 @@ services:
     volumes:
       - cache_data:/data
   db_maria:
+    command: [ "--max_connections=1000" ]
     image: mariadb:10.8.3
     container_name: db_maria
     environment:

@@ -31,7 +31,7 @@ func SessionAuthenticator(r repository.Repository, authPriv ...uint64) echo.Midd
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			} else if val == nil {
 				fmt.Println("user not existed anymore")
-				r.InvalidateSessionKey(c.Request().Context(), sessionKey)
+				r.InvalidateUserSession(c.Request().Context(), sessionKey)
 				return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 			}
 
@@ -70,7 +70,6 @@ func SessionAuthenticatorNoCache(r repository.Repository, authPriv ...uint64) ec
 				}
 			}
 
-			fmt.Println("NO PRIV")
 			return echttputil.WriteErrorResponse(c, errs.ErrUnauthorized)
 		}
 	}

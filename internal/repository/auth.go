@@ -268,7 +268,7 @@ func (repo *repository) FindUserBySession(ctx context.Context, sessionKey string
 
 	if val == "" || err == redis.Nil {
 		repo.logger.Errorf("%s session key not found", logTagFindBySessionKey)
-		err = errs.ErrUnauthorized
+		err = errs.ErrBadRequest
 		return
 	}
 

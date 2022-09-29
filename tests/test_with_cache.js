@@ -4,6 +4,18 @@ import { Rate } from "k6/metrics";
 
 export const baseUrl = "http://127.0.0.1:3000";
 
+export const options = {
+  scenarios: {
+    open_model: {
+      executor: 'constant-arrival-rate',
+      rate: 10,
+      timeUnit: '1s',
+      duration: '1m',
+      preAllocatedVUs: 100
+    },
+  },
+};
+
 function createUser(email, pass) {
   const url = baseUrl + "/v1/auth/register";
   const params = {
@@ -61,15 +73,10 @@ function deleteUser(id, sessionID) {
     },
   };
 
-  let resp = http.del(url, {}, params)
+  let resp = http.del(url, {}, params);
   check(resp, {
     "user deleted": (r) => r.status <= 299,
   });
-
-  
-  if (resp.status > 299) {
-    console.log(resp)
-  }
 }
 
 function getAllProduct(sessionID) {
@@ -88,8 +95,6 @@ function getAllProduct(sessionID) {
 
   if (resp.status <= 299) {
     return resp.json("data");
-  } else {
-    console.log(resp);
   }
 }
 
@@ -128,15 +133,12 @@ function checkout(data, sessionID) {
     "product checkout'd": (r) => r.status <= 299,
   });
 
-  if (resp.status > 299) {
-    console.log(resp)
-  }
 }
 
 export default function () {
   let userID = 0;
   let sessionID = "";
-  let email = __VU + __ITER + Math.floor(Math.random() * 1000) + "@mairu.xyz";
+  let email = __VU * 1000000000 + __ITER * 10000 + Math.floor(Math.random() * 1000) + "@mairu.xyz";
   let password = "1111";
   let itemCart = [];
 
@@ -151,8 +153,8 @@ export default function () {
     let product = getProductByID(id, sessionID);
     itemCart.push({
       product_id: product.product_id,
-      unit_price: product.unit_price,
-      qty: Math.floor(Math.random() * 10) + 1,
+      price: parseInt(product.unit_price),
+      qty: Math.floor(Math.random() * 10) + 1
     });
   });
   sleep(0.4);
@@ -165,11 +167,6 @@ export default function () {
   group("post cleanup", () => {
     [userID, sessionID] = login(email, password);
     sleep(0.3);
-    if (userID != 0) {
-      deleteUser(userID, sessionID);
-    } else {
-      console.log(userID, sessionID, email)
-    }
-  })
-
+    deleteUser(userID, sessionID);
+  });
 }
